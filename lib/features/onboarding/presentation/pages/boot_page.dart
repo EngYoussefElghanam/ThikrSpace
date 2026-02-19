@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/routing/app_routes.dart';
+import '../../../../core/storage/hive_service.dart';
 
 class BootPage extends StatefulWidget {
   const BootPage({super.key});
@@ -16,8 +17,7 @@ class _BootPageState extends State<BootPage> {
   }
 
   Future<void> _initializeApp() async {
-    // TODO: Add Hive init here shortly
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+    await HiveService.instance.init();
     if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(AppRoutes.devHome);
   }
