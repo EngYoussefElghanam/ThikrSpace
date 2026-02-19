@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:thikrspace_beta/main.dart';
+import 'package:thikrspace_beta/core/app/app_shell.dart';
 
 void main() {
-  testWidgets('boot route initializes then navigates to dev home', (WidgetTester tester) async {
+  testWidgets('boot route initializes then navigates to dev home',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const AppShell());
 
     expect(find.text('Booting...'), findsOneWidget);
