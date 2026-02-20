@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class BoxNames {
@@ -40,6 +41,18 @@ class HiveService {
   Future<void> put(String boxName, String key, dynamic value) async {
     final box = Hive.box(boxName);
     await box.put(key, value);
+  }
+
+  Future<void> clearUserData() async {
+    if (!_isInitialized) return;
+
+    await Future.wait([
+      Hive.box(BoxNames.userProfile).clear(),
+      Hive.box(BoxNames.items).clear(),
+      Hive.box(BoxNames.outbox).clear(),
+    ]);
+
+    debugPrint('Local user data wiped successfully.');
   }
 
   Future<void> closeAll() async {

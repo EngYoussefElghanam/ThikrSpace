@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1096641030232",
+    "project_id": "thikrspace",
+    "storage_bucket": "thikrspace.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1096641030232:android:1872691b552cf6015b022d",
+        "android_client_info": {
+          "package_name": "com.example.thikrspace_beta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZCFqC1e5Ikv1IChf3x6xRUQ-QLxaGgtE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
