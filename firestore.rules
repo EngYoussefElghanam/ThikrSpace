@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------------
+    // GLOBAL DENY (The ultimate safety net)
+    // ------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ------------------------------------------------------------------------
+    // HELPER FUNCTIONS
+    // ------------------------------------------------------------------------
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isNotModifyingAdminFlags() {
+      // Prevents the client from sending or updating restricted fields
+      let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();
+      return !affectedKeys.hasAny(['betaAccess', 'pro', 'isAdmin']);
+    }
+
+    function isNotSettingAdminFlagsOnCreate() {
+      return !('betaAccess' in request.resource.data) && !('pro' in request.resource.data);
+    }
+
+    // ------------------------------------------------------------------------
+    // USERS COLLECTION
+    // ------------------------------------------------------------------------
+    match /users/{userId} {
+      // Users can only read their own root document
+      allow read: if isOwner(userId);
+      
+      // Users can create their profile, but cannot give themselves pro/beta
+      allow create: if isOwner(userId) && isNotSettingAdminFlagsOnCreate();
+      
+      // Users can update their profile, but cannot touch the protected flags
+      allow update: if isOwner(userId) && isNotModifyingAdminFlags();
+      allow delete: if false; // Deletion should ideally be handled via a Cloud Function for cleanup
+
+      // ----------------------------------------------------------------------
+      // USER SUB-COLLECTIONS (Settings, Items, etc.)
+      // ----------------------------------------------------------------------
+      
+      match /settings/{docId} {
+        // Only the owner can read/write their settings
+        allow read, delete: if isOwner(userId);
+        
+        // Example bounded validation: Ensure a setting like 'dailyGoal' is a sane number
+        allow create, update: if isOwner(userId) 
+                           && (
+                             !('dailyGoal' in request.resource.data) || 
+                             (request.resource.data.dailyGoal is number && request.resource.data.dailyGoal >= 1 && request.resource.data.dailyGoal <= 100)
+                           );
+      }
+
+      match /items/{itemId} {
+        // Owner only. We will add stricter schema validation here later if needed.
+        allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}
