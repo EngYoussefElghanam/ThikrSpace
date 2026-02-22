@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../beta_gate/presentation/pages/beta_gate_page.dart';
 import '../cubit/auth_cubit.dart';
-import 'sign_in_page.dart'; // We will build this next
-import '../../../beta_gate/presentation/pages/dev_home_page.dart';
+import 'sign_in_page.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -13,8 +13,8 @@ class AuthGate extends StatelessWidget {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         if (state is AuthAuthenticated) {
-          // Valid session exists -> Let them in
-          return const DevHomePage();
+          // Intercept! Send them to the BetaGate, passing the user object.
+          return BetaGatePage(user: state.user);
         }
 
         if (state is AuthUnauthenticated || state is AuthError) {
