@@ -12,7 +12,20 @@
           "package_name": "com.example.thikrspace_beta"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1096641030232-1fjopk83ho5q8epqqbvob3mqo45qkuec.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.thikrspace_beta",
+            "certificate_hash": "27493163510ff958901cfa81d9f150ca0e11a0a1"
+          }
+        },
+        {
+          "client_id": "1096641030232-eiaqa95jt0bemirbvksrnfh96ba4bca7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAZCFqC1e5Ikv1IChf3x6xRUQ-QLxaGgtE"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1096641030232-eiaqa95jt0bemirbvksrnfh96ba4bca7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1096641030232-mn8q24t72hggai9pt2c9lv441l3v4ios.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.thikrspaceBeta"
+              }
+            }
+          ]
         }
       }
     }

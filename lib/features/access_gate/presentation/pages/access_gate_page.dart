@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../../../../core/ui/app_scaffold.dart';
 import '../../../../core/ui/app_states.dart';
 import '../../../auth/domain/entities/auth_user.dart';
@@ -11,52 +12,52 @@ class AccessGatePage extends StatefulWidget {
   const AccessGatePage({super.key, required this.user});
 
   @override
-  State<AccessGatePage> createState() => _BetaGatePageState();
+  State<AccessGatePage> createState() => _AccessGatePageState();
 }
 
-class _BetaGatePageState extends State<AccessGatePage> {
+class _AccessGatePageState extends State<AccessGatePage> {
   @override
   void initState() {
     super.initState();
-    // Trigger the profile fetch and access evaluation the moment this screen loads
-    context.read<AccessGateCubit>().evaluateAccess(widget.user.id);
+    // 1. Instantly trigger the access check the moment the user arrives
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AccessGateCubit>().evaluateAccess(widget.user.id);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AccessGateCubit, AccessGateState>(
-      listener: (context, state) {
-        if (state is AccessGateNeedsOnboarding) {
-          // Route to Onboarding (Placeholder for now, we build this next in Prompt 3)
-          Navigator.of(context).pushReplacementNamed('/onboarding');
-        } else if (state is AccessGateAllowed) {
-          // Route to Dev Home
-          Navigator.of(context).pushReplacementNamed('/dev_home');
-        }
-      },
-      builder: (context, state) {
-        if (state is AccessGateLoading || state is AccessGateInitial) {
-          return const AppScaffold(
-            body: LoadingState(),
-          );
-        }
+    // 2. Wrap the ENTIRE page in AppScaffold to guarantee your Parchment background
+    // is always applied, completely preventing the "Dark Screen".
+    return AppScaffold(
+      body: BlocConsumer<AccessGateCubit, AccessGateState>(
+        listener: (context, state) {
+          // 3. Routing logic based on onboarding status
+          if (state is AccessGateNeedsOnboarding) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.onBoarding);
+          } else if (state is AccessGateAllowed) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.devHome);
+          } else if (state is AccessGateError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message,
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onError)),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          // If the profile is actively being created in Firestore, show the spinner cleanly
+          if (state is AccessGateLoading) {
+            return const LoadingState();
+          }
 
-        if (state is AccessGateError) {
-          return AppScaffold(
-            body: ErrorState(
-              message: state.message,
-              onRetry: () => context
-                  .read<AccessGateCubit>()
-                  .evaluateAccess(widget.user.id),
-            ),
-          );
-        }
-
-        // Fallback (should ideally never be visible long enough to read)
-        return const AppScaffold(
-          body: LoadingState(),
-        );
-      },
+          // Fallback empty state while waiting for the Cubit to initialize
+          return const Center(child: SizedBox.shrink());
+        },
+      ),
     );
   }
 }
