@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../features/beta_gate/presentation/cubit/beta_gate_cubit.dart';
 
 // Your existing auth imports...
 import '../../features/auth/data/datasources/firebase_auth_datasource.dart';
@@ -8,6 +10,7 @@ import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/pages/auth_gate.dart';
 import '../../features/onboarding/presentation/pages/boot_page.dart';
 import '../../features/beta_gate/presentation/pages/dev_home_page.dart';
+import '../../features/profile/data/repositories/user_profile_repository_impl.dart';
 import '../routing/app_routes.dart';
 
 // Add the new theme imports:
@@ -27,6 +30,15 @@ class AppShell extends StatelessWidget {
             final authDataSource = FirebaseAuthDataSource();
             final authRepository = AuthRepositoryImpl(authDataSource);
             return AuthCubit(authRepository);
+          },
+        ),
+        BlocProvider<BetaGateCubit>(
+          create: (context) {
+            // Instantiate the offline-first repo
+            final profileRepo = UserProfileRepositoryImpl(
+              firestore: FirebaseFirestore.instance,
+            );
+            return BetaGateCubit(profileRepo);
           },
         ),
         // 1. Inject the ThemeCubit globally
