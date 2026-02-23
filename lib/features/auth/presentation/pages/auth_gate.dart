@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../beta_gate/presentation/pages/beta_gate_page.dart';
+import '../../../access_gate/presentation/pages/access_gate_page.dart';
 import '../cubit/auth_cubit.dart';
 import 'sign_in_page.dart';
 import '../../../../core/ui/app_scaffold.dart';
@@ -15,7 +15,7 @@ class AuthGate extends StatelessWidget {
       builder: (context, state) {
         // 1. Success: Send to the Beta Gate
         if (state is AuthAuthenticated) {
-          return BetaGatePage(user: state.user);
+          return AccessGatePage(user: state.user);
         }
 
         // 2. Initial Boot: Only show full-screen loading when the app first opens

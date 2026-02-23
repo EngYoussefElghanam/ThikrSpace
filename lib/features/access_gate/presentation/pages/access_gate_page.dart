@@ -3,55 +3,51 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/ui/app_scaffold.dart';
 import '../../../../core/ui/app_states.dart';
 import '../../../auth/domain/entities/auth_user.dart';
-import '../cubit/beta_gate_cubit.dart';
-import 'beta_blocked_screen.dart';
+import '../cubit/access_gate_cubit.dart';
 
-class BetaGatePage extends StatefulWidget {
+class AccessGatePage extends StatefulWidget {
   final AuthUser user;
 
-  const BetaGatePage({super.key, required this.user});
+  const AccessGatePage({super.key, required this.user});
 
   @override
-  State<BetaGatePage> createState() => _BetaGatePageState();
+  State<AccessGatePage> createState() => _BetaGatePageState();
 }
 
-class _BetaGatePageState extends State<BetaGatePage> {
+class _BetaGatePageState extends State<AccessGatePage> {
   @override
   void initState() {
     super.initState();
     // Trigger the profile fetch and access evaluation the moment this screen loads
-    context.read<BetaGateCubit>().evaluateAccess(widget.user.id);
+    context.read<AccessGateCubit>().evaluateAccess(widget.user.id);
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<BetaGateCubit, BetaGateState>(
+    return BlocConsumer<AccessGateCubit, AccessGateState>(
       listener: (context, state) {
-        if (state is BetaGateNeedsOnboarding) {
+        if (state is AccessGateNeedsOnboarding) {
           // Route to Onboarding (Placeholder for now, we build this next in Prompt 3)
           Navigator.of(context).pushReplacementNamed('/onboarding');
-        } else if (state is BetaGateAllowed) {
+        } else if (state is AccessGateAllowed) {
           // Route to Dev Home
           Navigator.of(context).pushReplacementNamed('/dev_home');
         }
       },
       builder: (context, state) {
-        if (state is BetaGateLoading || state is BetaGateInitial) {
+        if (state is AccessGateLoading || state is AccessGateInitial) {
           return const AppScaffold(
             body: LoadingState(),
           );
         }
 
-        if (state is BetaGateDenied) {
-          return BetaBlockedScreen(message: state.message);
-        }
-
-        if (state is BetaGateError) {
+        if (state is AccessGateError) {
           return AppScaffold(
             body: ErrorState(
               message: state.message,
-              onRetry: () =>
-                  context.read<BetaGateCubit>().evaluateAccess(widget.user.id),
+              onRetry: () => context
+                  .read<AccessGateCubit>()
+                  .evaluateAccess(widget.user.id),
             ),
           );
         }
