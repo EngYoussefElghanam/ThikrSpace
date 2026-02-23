@@ -3,7 +3,7 @@ class UserFlags {
   final bool pro;
 
   const UserFlags({
-    this.betaAccess = false,
+    this.betaAccess = true,
     this.pro = false,
   });
 

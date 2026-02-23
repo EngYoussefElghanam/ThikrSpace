@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/storage/hive_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/repositories/user_profile_repository.dart';
@@ -17,16 +18,31 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
     UserProfile? localProfile;
     if (localData != null) {
-      final map = Map<String, dynamic>.from(localData);
-      localProfile = UserProfile(
-        id: uid,
-        flags: UserFlags.fromMap(map['flags'] as Map<String, dynamic>?),
-        settings:
-            UserSettings.fromMap(map['settings'] as Map<String, dynamic>?),
-        stats: UserStats.fromMap(map['stats'] as Map<String, dynamic>?),
-      );
+      try {
+        // Safely convert Hive's dynamic nested maps into String maps
+        localProfile = UserProfile(
+          id: uid,
+          flags: UserFlags.fromMap(
+            localData['flags'] != null
+                ? Map<String, dynamic>.from(localData['flags'] as Map)
+                : null,
+          ),
+          settings: UserSettings.fromMap(
+            localData['settings'] != null
+                ? Map<String, dynamic>.from(localData['settings'] as Map)
+                : null,
+          ),
+          stats: UserStats.fromMap(
+            localData['stats'] != null
+                ? Map<String, dynamic>.from(localData['stats'] as Map)
+                : null,
+          ),
+        );
+      } catch (e) {
+        debugPrint('Hive parsing error: $e');
+        // If local data is corrupted, we just ignore it and let Firestore fetch fresh data
+      }
     }
-
     // 2. REMOTE SYNC
     try {
       final docSnapshot = await _firestore.collection('users').doc(uid).get();

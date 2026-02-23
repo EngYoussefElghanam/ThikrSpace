@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../profile/domain/repositories/user_profile_repository.dart';
 import '../../../profile/domain/entities/user_profile.dart';
@@ -30,7 +31,9 @@ class BetaGateCubit extends Cubit<BetaGateState> {
 
       // 4. Fully Allowed
       emit(BetaGateAllowed(profile));
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Print the exact crash to your debug console so you aren't guessing
+      debugPrint('BetaGate Error: $e\n$stackTrace');
       emit(BetaGateError(
           "Could not load profile. Please check your connection."));
     }
