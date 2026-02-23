@@ -39,4 +39,17 @@ class AuthRepositoryImpl implements AuthRepository {
     await HiveService.instance.clearUserData();
     await _dataSource.signOut();
   }
+
+  @override
+  Future<AuthUser> signUp(String email, String password) async {
+    final user = await _dataSource.signUp(email, password);
+    return _mapFirebaseUser(user);
+  }
+
+  @override
+  Future<AuthUser?> signInWithGoogle() async {
+    final user = await _dataSource.signInWithGoogle();
+    if (user == null) return null; // Gracefully pass the cancellation up
+    return _mapFirebaseUser(user);
+  }
 }

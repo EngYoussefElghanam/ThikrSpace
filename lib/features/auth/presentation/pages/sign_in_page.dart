@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/routing/app_routes.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/auth_error_mapper.dart'; // <-- IMPORT MAPPER
 import '../cubit/auth_cubit.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/ui/app_scaffold.dart';
@@ -25,28 +28,38 @@ class _SignInPageState extends State<SignInPage> {
     super.dispose();
   }
 
+  // Helper for premium floating error messages
+  void _showErrorSnackBar(
+      BuildContext context, String message, ColorScheme colorScheme) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(color: colorScheme.onError),
+        ),
+        backgroundColor: colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Notice we use AppScaffold here. It automatically adds the 16px horizontal padding.
     return AppScaffold(
       appBar: AppBar(
-          title: const Text('Sign In'),
-          backgroundColor: Colors.transparent,
-          elevation: 0),
+        title: const Text('Sign In'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.message,
-                  style: TextStyle(color: colorScheme.onError),
-                ),
-                backgroundColor: colorScheme.error,
-              ),
-            );
+            // --- PASS RAW ERROR TO MAPPER ---
+            final friendlyMessage =
+                AuthErrorMapper.getFriendlyMessage(state.message);
+            _showErrorSnackBar(context, friendlyMessage, colorScheme);
           }
         },
         builder: (context, state) {
@@ -54,9 +67,8 @@ class _SignInPageState extends State<SignInPage> {
 
           return Center(
             child: AppCard(
-              // The card automatically applies the 20px radius and 16px internal padding
               child: Column(
-                mainAxisSize: MainAxisSize.min, // Wrap content tightly
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   AppTextField(
                     controller: _emailController,
@@ -74,15 +86,70 @@ class _SignInPageState extends State<SignInPage> {
                   const SizedBox(height: AppSpacing.xl),
                   PrimaryButton(
                     text: 'Sign In',
-                    isLoading:
-                        isLoading, // Button handles the spinner logic internally now!
+                    isLoading: isLoading,
                     onPressed: () {
+                      FocusScope.of(context).unfocus(); // Dismiss keyboard
+
                       final email = _emailController.text.trim();
                       final password = _passwordController.text.trim();
-                      if (email.isNotEmpty && password.isNotEmpty) {
-                        context.read<AuthCubit>().signIn(email, password);
+
+                      // Local validation to prevent empty submissions
+                      if (email.isEmpty || password.isEmpty) {
+                        _showErrorSnackBar(
+                            context,
+                            'Please enter both email and password.',
+                            colorScheme);
+                        return;
                       }
+
+                      context.read<AuthCubit>().signIn(email, password);
                     },
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Divider(color: AppColors.outline, thickness: 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md),
+                        child: Text(
+                          'OR',
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    color: AppColors.inkSoft,
+                                    letterSpacing: 1.5,
+                                  ),
+                        ),
+                      ),
+                      const Expanded(
+                        child: Divider(color: AppColors.outline, thickness: 1),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  SecondaryButton(
+                    text: 'Continue with Google',
+                    isLoading: isLoading,
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      context.read<AuthCubit>().signInWithGoogle();
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextButton(
+                    onPressed: isLoading
+                        ? null
+                        : () =>
+                            Navigator.of(context).pushNamed(AppRoutes.signUp),
+                    child: Text(
+                      'Need an account? Sign Up',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.gold,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
                   ),
                 ],
               ),

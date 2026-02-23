@@ -1,15 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../features/beta_gate/presentation/cubit/beta_gate_cubit.dart';
+import 'package:thikrspace_beta/features/auth/presentation/pages/sign_up_page.dart';
+import 'package:thikrspace_beta/features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/access_gate/presentation/cubit/access_gate_cubit.dart';
 
 // Your existing auth imports...
 import '../../features/auth/data/datasources/firebase_auth_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/pages/auth_gate.dart';
+import '../../features/onboarding/presentation/cubit/onboarding_cubit.dart';
 import '../../features/onboarding/presentation/pages/boot_page.dart';
-import '../../features/beta_gate/presentation/pages/dev_home_page.dart';
+import '../../features/access_gate/presentation/pages/dev_home_page.dart';
 import '../../features/profile/data/repositories/user_profile_repository_impl.dart';
 import '../routing/app_routes.dart';
 
@@ -32,13 +35,19 @@ class AppShell extends StatelessWidget {
             return AuthCubit(authRepository);
           },
         ),
-        BlocProvider<BetaGateCubit>(
+        BlocProvider<OnboardingCubit>(
+          create: (context) {
+            // Re-use the repository we created for BetaGate
+            return OnboardingCubit(UserProfileRepositoryImpl());
+          },
+        ),
+        BlocProvider<AccessGateCubit>(
           create: (context) {
             // Instantiate the offline-first repo
             final profileRepo = UserProfileRepositoryImpl(
               firestore: FirebaseFirestore.instance,
             );
-            return BetaGateCubit(profileRepo);
+            return AccessGateCubit(profileRepo);
           },
         ),
         // 1. Inject the ThemeCubit globally
@@ -66,6 +75,8 @@ class AppShell extends StatelessWidget {
               AppRoutes.boot: (_) => const BootPage(),
               AppRoutes.authGate: (_) => const AuthGate(),
               AppRoutes.devHome: (_) => const DevHomePage(),
+              AppRoutes.onBoarding: (_) => const OnboardingPage(),
+              AppRoutes.signUp: (_) => const SignUpPage(),
             },
           );
         },
