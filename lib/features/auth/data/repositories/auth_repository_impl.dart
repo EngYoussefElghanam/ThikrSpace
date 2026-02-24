@@ -11,7 +11,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthUser _mapFirebaseUser(fb_auth.User user) {
     return AuthUser(
-        id: user.uid, email: user.email ?? '', name: user.displayName ?? '');
+      id: user.uid,
+      email: user.email ?? '',
+      name: user.displayName ?? '',
+      // --- Day 6 Lazy Meta Defaults ---
+      // These act as temporary defaults until your AccessGate
+      // or SyncService pulls the real values from Hive/Firestore.
+      cursorSurah: 1,
+      cursorAyah: 1,
+      targetEndSurah: 114,
+    );
   }
 
   @override
