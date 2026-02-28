@@ -1,38 +1,63 @@
 import 'package:flutter_test/flutter_test.dart';
+// Note: Ensure your file name matches your actual import path!
+// (e.g., quran_meta.dart instead of quran-meta.dart if you used underscores)
 import 'package:thikrspace_beta/core/constants/quran-meta.dart';
 
 void main() {
-  group('Day 6 - QuranMeta Lazy Cursor Tests', () {
-    test('Generates next 3 new items identically (Deterministic)', () {
-      final run1 = QuranMeta.generateNextNItems(
-          currentSurah: 1, currentAyah: 1, amount: 3, targetEndSurah: 114);
-      final run2 = QuranMeta.generateNextNItems(
-          currentSurah: 1, currentAyah: 1, amount: 3, targetEndSurah: 114);
-
-      // Must be identical
-      expect(run1, run2);
-      expect(run1, ['s1_a1', 's1_a2', 's1_a3']);
+  group('Day 8 - QuranMeta Cursor Logic Tests', () {
+    test('getAyahCount returns correct counts', () {
+      expect(QuranMeta.getAyahCount(1), 7); // Al-Fatiha
+      expect(QuranMeta.getAyahCount(2), 286); // Al-Baqarah
+      expect(QuranMeta.getAyahCount(114), 6); // An-Nas
     });
 
-    test('Cursor advances across Surah boundaries correctly', () {
-      // Surah 1 has 7 ayahs.
-      // Starting at s1_a6 and asking for 3 items should yield:
-      // s1_a6, s1_a7, and then safely wrap to s2_a1.
-      final result = QuranMeta.generateNextNItems(
-          currentSurah: 1, currentAyah: 6, amount: 3, targetEndSurah: 114);
+    test('advanceCursor moves forward and crosses boundaries safely', () {
+      // Start at Surah 1, Ayah 6. Target range: 1 -> 114 (Forwards)
+      var cursor = const Cursor(surah: 1, ayah: 6);
 
-      expect(result, ['s1_a6', 's1_a7', 's2_a1']);
+      cursor = QuranMeta.advanceCursor(cursor, 1, 114)!;
+      expect(cursor, const Cursor(surah: 1, ayah: 7));
+
+      // Crossing the boundary! Surah 1 only has 7 ayahs.
+      cursor = QuranMeta.advanceCursor(cursor, 1, 114)!;
+      expect(cursor, const Cursor(surah: 2, ayah: 1));
     });
 
-    test('Stops generating safely if targetEndSurah is exceeded', () {
-      // Surah 114 (An-Nas) has 6 ayahs.
-      // Starting at s114_a5 and asking for 5 items should only yield 2 items
-      // (a5, a6) and then stop because there is no Surah 115.
-      final result = QuranMeta.generateNextNItems(
-          currentSurah: 114, currentAyah: 5, amount: 5, targetEndSurah: 114);
+    test('advanceCursor moves backwards and crosses boundaries safely', () {
+      // Start at Surah 114, Ayah 5. Target range: 114 -> 1 (Backwards)
+      var cursor = const Cursor(surah: 114, ayah: 5);
 
-      expect(result, ['s114_a5', 's114_a6']);
-      expect(result.length, 2);
+      cursor = QuranMeta.advanceCursor(cursor, 114, 1)!;
+      expect(cursor, const Cursor(surah: 114, ayah: 6)); // Ayahs always go up
+
+      // Crossing the boundary! Drops down to Surah 113, Ayah 1.
+      cursor = QuranMeta.advanceCursor(cursor, 114, 1)!;
+      expect(cursor, const Cursor(surah: 113, ayah: 1));
+    });
+
+    test('advanceCursor returns null when range is completed', () {
+      // Forwards: Finished Surah 114
+      var cursor = const Cursor(surah: 114, ayah: 6);
+      expect(QuranMeta.advanceCursor(cursor, 1, 114), isNull);
+
+      // Backwards: Finished Surah 1
+      cursor = const Cursor(surah: 1, ayah: 7);
+      expect(QuranMeta.advanceCursor(cursor, 114, 1), isNull);
+    });
+
+    test('clampCursorToRange enforces valid boundaries', () {
+      // Forwards range: 10 -> 114
+      // Cursor at Surah 5 (outside range) should clamp to Surah 10, Ayah 1
+      expect(
+          QuranMeta.clampCursorToRange(
+              const Cursor(surah: 5, ayah: 1), 10, 114),
+          const Cursor(surah: 10, ayah: 1));
+
+      // Cursor at Surah 15 (inside range) should remain unchanged
+      expect(
+          QuranMeta.clampCursorToRange(
+              const Cursor(surah: 15, ayah: 5), 10, 114),
+          const Cursor(surah: 15, ayah: 5));
     });
   });
 }

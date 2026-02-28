@@ -1,7 +1,9 @@
+/// Core constants and cursor utilities for Quran navigation.
+/// Pure Dart. No Flutter imports.
 class QuranMeta {
-  // Index 0 represents Surah 1 (Al-Fatihah), Index 113 represents Surah 114 (An-Nas).
-  // This structural data allows deterministic cursor advancement without needing a heavy Quran text library.
-  static const List<int> ayahCounts = [
+  /// The exact number of ayahs in each of the 114 Surahs.
+  /// Index 0 = Surah 1 (Al-Fatiha), Index 113 = Surah 114 (An-Nas).
+  static const List<int> surahAyahCounts = [
     7,
     286,
     200,
@@ -118,35 +120,63 @@ class QuranMeta {
     6
   ];
 
-  static int getAyahCount(int surahNumber) {
-    if (surahNumber < 1 || surahNumber > 114) {
-      throw ArgumentError('Surah number must be between 1 and 114');
-    }
-    return ayahCounts[surahNumber - 1];
+  static int getAyahCount(int surah) {
+    if (surah < 1 || surah > 114) throw ArgumentError('Invalid surah: $surah');
+    return surahAyahCounts[surah - 1];
   }
 
-  // Pure Dart deterministic function to calculate the next N items
-  static List<String> generateNextNItems({
-    required int currentSurah,
-    required int currentAyah,
-    required int amount,
-    required int targetEndSurah,
-  }) {
-    List<String> nextItems = [];
-    int s = currentSurah;
-    int a = currentAyah;
+  /// Advances the cursor to the next Ayah.
+  /// Automatically handles Surah boundaries and respects the target range (forwards or backwards).
+  /// Returns null if the user has completed their target range.
+  static Cursor? advanceCursor(Cursor current, int startSurah, int endSurah) {
+    bool isBackwards = startSurah > endSurah;
+    int nextAyah = current.ayah + 1;
+    int nextSurah = current.surah;
 
-    for (int i = 0; i < amount; i++) {
-      if (s > targetEndSurah) break; // Reached the user's final goal
-
-      nextItems.add('s${s}_a$a'); // Generates deterministic ID: s1_a1
-
-      a++; // Move to next ayah
-      if (a > getAyahCount(s)) {
-        s++; // Move to next surah
-        a = 1; // Reset to first ayah
-      }
+    // Boundary check: Did we finish the current Surah?
+    if (nextAyah > getAyahCount(current.surah)) {
+      nextAyah = 1; // Always reset to Ayah 1 of the new Surah
+      nextSurah = isBackwards ? current.surah - 1 : current.surah + 1;
     }
-    return nextItems;
+
+    // Range check: Did we finish the target range?
+    if (isBackwards && nextSurah < endSurah) return null;
+    if (!isBackwards && nextSurah > endSurah) return null;
+
+    // Safety bounds just in case
+    if (nextSurah < 1 || nextSurah > 114) return null;
+
+    return Cursor(surah: nextSurah, ayah: nextAyah);
   }
+
+  /// Validates if the cursor is within the current range.
+  /// If out of bounds, returns a reset cursor at Ayah 1 of the startSurah.
+  static Cursor clampCursorToRange(
+      Cursor current, int startSurah, int endSurah) {
+    bool isBackwards = startSurah > endSurah;
+    if (isBackwards) {
+      if (current.surah > startSurah || current.surah < endSurah)
+        return Cursor(surah: startSurah, ayah: 1);
+    } else {
+      if (current.surah < startSurah || current.surah > endSurah)
+        return Cursor(surah: startSurah, ayah: 1);
+    }
+    return current;
+  }
+}
+
+// Simple immutable data classes for the domain
+class Cursor {
+  final int surah;
+  final int ayah;
+  const Cursor({required this.surah, required this.ayah});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Cursor && surah == other.surah && ayah == other.ayah;
+  @override
+  int get hashCode => surah.hashCode ^ ayah.hashCode;
+  @override
+  String toString() => 'Cursor(s$surah:a$ayah)';
 }
