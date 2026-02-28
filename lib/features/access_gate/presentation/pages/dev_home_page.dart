@@ -1,76 +1,103 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+// Make sure this import path matches where you put the Impl file!
+import 'package:thikrspace_beta/features/quran/domain/repositories/quran_text_repository_impl.dart';
 
-class DevHomePage extends StatelessWidget {
+class DevHomePage extends StatefulWidget {
   const DevHomePage({super.key});
+
+  @override
+  State<DevHomePage> createState() => _DevHomePageState();
+}
+
+class _DevHomePageState extends State<DevHomePage> {
+  // Instantiate the real repository we just built
+  final QuranTextRepositoryRealImpl _quranRepo = QuranTextRepositoryRealImpl();
+
+  // A Future to hold our text loading
+  late Future<List<String>> _surahTextFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Let's load Surah 112 (Al-Ikhlas), Ayahs 1 through 4
+    _surahTextFuture = _quranRepo.getRange(112, 1, 4);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dev Home')),
+      appBar: AppBar(title: const Text('Arabic Text Rendering Test')),
+      backgroundColor: Colors.grey[100],
       body: Center(
-          child: Column(
-        children: [
-          Text('Developer home ready'),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              final db = FirebaseFirestore.instance;
-              final myUid = FirebaseAuth.instance.currentUser?.uid;
-
-              if (myUid == null) {
-                debugPrint('TEST FAILED: You must be logged in first.');
-                return;
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: FutureBuilder<List<String>>(
+            future: _surahTextFuture,
+            builder: (context, snapshot) {
+              // 1. Loading State
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator();
               }
 
-              debugPrint('--- FIRING SECURITY TORTURE TESTS ---');
-
-              // TEST 1: Privilege Escalation (Flags)
-              try {
-                await db
-                    .collection('users')
-                    .doc(myUid)
-                    .update({'flags.pro': true});
-                debugPrint('❌ TEST 1 FAILED: I was able to make myself Pro!');
-              } catch (e) {
-                debugPrint('✅ TEST 1 PASSED: Blocked from editing flags.');
+              // 2. Error State (e.g., if JSON file is missing)
+              if (snapshot.hasError) {
+                return Text(
+                  'Error loading JSON:\n${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                );
               }
 
-              // TEST 2: Cross-Tenant Breach (Other UID)
-              try {
-                await db
-                    .collection('users')
-                    .doc('some_random_hacked_uid_123')
-                    .set({'hacked': true});
-                debugPrint(
-                    '❌ TEST 2 FAILED: I wrote to another user\'s profile!');
-              } catch (e) {
-                debugPrint(
-                    '✅ TEST 2 PASSED: Blocked from touching other UIDs.');
+              // 3. Success State
+              final ayahs = snapshot.data!;
+
+              // Combine the ayahs with the traditional Ayah end symbol (۝) and the number
+              // Note: Arabic numbers are used (١, ٢, ٣, ٤)
+              final arabicNumbers = ['١', '٢', '٣', '٤'];
+              String fullSurah = '';
+              for (int i = 0; i < ayahs.length; i++) {
+                fullSurah += '${ayahs[i]} ﴿${arabicNumbers[i]}﴾ ';
               }
 
-              // TEST 3: Invalid Settings Bounds
-              try {
-                await db.collection('users').doc(myUid).update({
-                  'settings': {
-                    'dailyNew': 9999, // Way over the max of 50
-                    'dailyMaxReviews': 500
-                  }
-                });
-                debugPrint('❌ TEST 3 FAILED: I bypassed the dailyNew limit!');
-              } catch (e) {
-                debugPrint(
-                    '✅ TEST 3 PASSED: Blocked from invalid settings bounds.');
-              }
-
-              debugPrint('--- TESTS COMPLETE ---');
+              return Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'سورة الإخلاص',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // THE CRITICAL TEXT WIDGET
+                      Text(
+                        fullSurah.trim(),
+                        // Explicitly force Right-to-Left rendering
+                        textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          // A large font size makes the Uthmani script easy to read
+                          fontSize: 32,
+                          // A taller line height prevents the diacritics (tashkeel) from clipping
+                          height: 1.8,
+                          // If you add a custom Arabic font later (like KFGQPC), apply its fontFamily here!
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
             },
-            child: const Text('RUN SECURITY TESTS',
-                style: TextStyle(color: Colors.white)),
-          )
-        ],
-      )),
+          ),
+        ),
+      ),
     );
   }
 }
