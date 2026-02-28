@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 // Note: Ensure your file name matches your actual import path!
 // (e.g., quran_meta.dart instead of quran-meta.dart if you used underscores)
 import 'package:thikrspace_beta/core/constants/quran-meta.dart';
+import 'package:thikrspace_beta/features/review/domain/entities/queue_entities.dart'
+    show Cursor;
 
 void main() {
   group('Day 8 - QuranMeta Cursor Logic Tests', () {

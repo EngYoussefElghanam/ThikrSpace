@@ -41,6 +41,9 @@ class GenerateTodayQueue {
       if (!existingIds.contains(candidateId)) {
         newItems
             .add(AyahRef(surah: activeCursor.surah, ayah: activeCursor.ayah));
+
+        // 🚨 FIX: Immediately add it to the set so we NEVER add it again!
+        existingIds.add(candidateId);
       }
 
       // Advance cursor

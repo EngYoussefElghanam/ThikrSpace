@@ -1,3 +1,5 @@
+import '../../features/review/domain/entities/queue_entities.dart';
+
 /// Core constants and cursor utilities for Quran navigation.
 /// Pure Dart. No Flutter imports.
 class QuranMeta {
@@ -155,28 +157,14 @@ class QuranMeta {
       Cursor current, int startSurah, int endSurah) {
     bool isBackwards = startSurah > endSurah;
     if (isBackwards) {
-      if (current.surah > startSurah || current.surah < endSurah)
+      if (current.surah > startSurah || current.surah < endSurah) {
         return Cursor(surah: startSurah, ayah: 1);
+      }
     } else {
-      if (current.surah < startSurah || current.surah > endSurah)
+      if (current.surah < startSurah || current.surah > endSurah) {
         return Cursor(surah: startSurah, ayah: 1);
+      }
     }
     return current;
   }
-}
-
-// Simple immutable data classes for the domain
-class Cursor {
-  final int surah;
-  final int ayah;
-  const Cursor({required this.surah, required this.ayah});
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Cursor && surah == other.surah && ayah == other.ayah;
-  @override
-  int get hashCode => surah.hashCode ^ ayah.hashCode;
-  @override
-  String toString() => 'Cursor(s$surah:a$ayah)';
 }

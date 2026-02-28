@@ -20,4 +20,22 @@ class SrsState {
   String toString() {
     return 'SrsState(ease: ${ease.toStringAsFixed(2)}, interval: $intervalDays, reps: $reps, lapses: $lapses)';
   }
+
+  SrsState copyWith({
+    double? ease,
+    int? intervalDays,
+    DateTime? dueAt,
+    int? reps,
+    int? lapses,
+    DateTime? lastReviewedAt,
+  }) {
+    return SrsState(
+      ease: ease ?? this.ease,
+      intervalDays: intervalDays ?? this.intervalDays,
+      dueAt: dueAt ?? this.dueAt,
+      reps: reps ?? this.reps,
+      lapses: lapses ?? this.lapses,
+      lastReviewedAt: lastReviewedAt ?? this.lastReviewedAt,
+    );
+  }
 }

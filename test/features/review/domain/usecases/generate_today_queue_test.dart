@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:thikrspace_beta/core/constants/quran-meta.dart';
 import 'package:thikrspace_beta/features/review/domain/entities/queue_entities.dart';
 import 'package:thikrspace_beta/features/review/domain/entities/srs_state.dart';
 import 'package:thikrspace_beta/features/review/domain/usecases/generate_today_queue.dart';
@@ -23,6 +22,47 @@ void main() {
       );
     }
 
+    test(
+        'DayWindow boundary correctness: perfectly respects endUtc inclusive edge',
+        () {
+      final windowEnd = DateTime.utc(2026, 2, 28, 23, 59, 59);
+      final exactWindow = DayWindow(
+          startUtc: DateTime.utc(2026, 2, 28, 0, 0, 0), endUtc: windowEnd);
+
+      // We instantiate them directly to avoid the Dart cascade operator (..) trap
+      final boundarySrs = SrsState(
+        ease: 2.5, intervalDays: 1, reps: 1, lapses: 0,
+        lastReviewedAt: windowEnd.subtract(const Duration(days: 1)),
+        dueAt: windowEnd, // Exactly on the boundary (23:59:59)
+      );
+
+      final tomorrowSrs = SrsState(
+        ease: 2.5, intervalDays: 1, reps: 1, lapses: 0,
+        lastReviewedAt: windowEnd.subtract(const Duration(days: 1)),
+        // 1 second into tomorrow (00:00:00)
+        dueAt: windowEnd.add(const Duration(seconds: 1)),
+      );
+
+      final introduced = [
+        ItemState(ref: const AyahRef(surah: 1, ayah: 1), srs: boundarySrs),
+        ItemState(ref: const AyahRef(surah: 1, ayah: 2), srs: tomorrowSrs),
+      ];
+
+      final result = usecase(
+        introducedItems: introduced,
+        settings: const QueueSettings(
+            dailyNew: 0,
+            dailyMaxReviews: 50,
+            rangeStartSurah: 1,
+            rangeEndSurah: 114),
+        currentCursor: const Cursor(surah: 2, ayah: 1),
+        window: exactWindow,
+      );
+
+      // Now it will correctly only count the first one!
+      expect(result.dueQueue.length, 1);
+      expect(result.dueQueue.first.ref.id, 's1_a1');
+    });
     test('Generates new items forwards and crosses boundaries (1 -> 2)', () {
       final result = usecase(
         introducedItems: [],
