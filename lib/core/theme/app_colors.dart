@@ -33,6 +33,9 @@ class AppColors {
   static const Color errorLight = Color(0xFFB3261E);
   static const Color errorDark = Color(0xFFFFB4AB);
 
+  static const Color successLight = Color(0xFF2E7D32);
+  static const Color successDark = Color(0xFF81C784);
+
   static const ColorScheme lightScheme = ColorScheme.light(
     // Brand actions / accents
     primary: gold,

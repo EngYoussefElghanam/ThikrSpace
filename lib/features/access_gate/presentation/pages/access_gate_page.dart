@@ -36,7 +36,7 @@ class _AccessGatePageState extends State<AccessGatePage> {
           if (state is AccessGateNeedsOnboarding) {
             Navigator.of(context).pushReplacementNamed(AppRoutes.onBoarding);
           } else if (state is AccessGateAllowed) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.devHome);
+            Navigator.of(context).pushReplacementNamed(AppRoutes.today);
           } else if (state is AccessGateError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
