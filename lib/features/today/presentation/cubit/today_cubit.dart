@@ -49,6 +49,25 @@ class TodayCubit extends Cubit<TodayState> {
         window: dayWindow,
       );
 
+      final allDueRefs = introducedItems
+          .where(
+            (item) => item.srs.dueAt.isBefore(dayWindow.endUtc) ||
+                item.srs.dueAt.isAtSameMomentAs(dayWindow.endUtc),
+          )
+          .toList()
+        ..sort((a, b) {
+          final surahCompare = a.ref.surah.compareTo(b.ref.surah);
+          if (surahCompare != 0) {
+            return surahCompare;
+          }
+          return a.ref.ayah.compareTo(b.ref.ayah);
+        });
+
+      final overflowDueQueue = allDueRefs
+          .skip(settings.dailyMaxReviews)
+          .map((item) => item.ref)
+          .toList(growable: false);
+
       final sessionQueue = [
         ...queue.dueQueue.map((item) => item.ref),
         ...queue.newQueue,
@@ -63,6 +82,7 @@ class TodayCubit extends Cubit<TodayState> {
           dayKey: dayKey,
           rawQueue: queue,
           sessionQueue: snapshot?.queue ?? sessionQueue,
+          overflowDueQueue: overflowDueQueue,
           completedCount: completedCount,
           totalCount: sessionQueue.length,
           hasSnapshot: snapshot != null && !snapshot.isComplete,

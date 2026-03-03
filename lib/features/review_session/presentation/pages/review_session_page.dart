@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/time_provider.dart';
 import '../../../../core/ui/app_buttons.dart';
@@ -19,17 +20,30 @@ import '../../domain/usecases/derive_review_chunk.dart';
 import '../cubit/review_session_cubit.dart';
 import '../widgets/mushaf_peek_bottom_sheet.dart';
 
-class ReviewSessionPage extends StatelessWidget {
+class ReviewSessionPage extends StatefulWidget {
+  static const keepGoingOptionalResult = 'keep_going_optional';
+
   final String dayKey;
   final List<AyahRef> queue;
   final SessionSnapshot? snapshot;
+  final bool isExtraMode;
+  final bool hasOptionalOverflow;
 
   const ReviewSessionPage({
     super.key,
     required this.dayKey,
     required this.queue,
     this.snapshot,
+    this.isExtraMode = false,
+    this.hasOptionalOverflow = false,
   });
+
+  @override
+  State<ReviewSessionPage> createState() => _ReviewSessionPageState();
+}
+
+class _ReviewSessionPageState extends State<ReviewSessionPage> {
+  bool _completionShown = false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +59,12 @@ class ReviewSessionPage extends StatelessWidget {
         snapshotRepository: context.read<SessionSnapshotRepository>(),
         reviewRepository: context.read<ReviewRepository>(),
         timeProvider: timeProvider,
-      )..start(dayKey: dayKey, queue: queue, snapshot: snapshot),
+      )..start(dayKey: widget.dayKey, queue: widget.queue, snapshot: widget.snapshot),
       child: BlocConsumer<ReviewSessionCubit, ReviewSessionState>(
-        listener: (context, state) {
-          if (state is ReviewSessionCompleted) {
-            Navigator.of(context).pop(true);
+        listener: (context, state) async {
+          if (state is ReviewSessionCompleted && !_completionShown) {
+            _completionShown = true;
+            await _showCompletionConfirmation(context, state.dayKey);
           }
         },
         builder: (context, state) {
@@ -62,11 +77,16 @@ class ReviewSessionPage extends StatelessWidget {
               body: Center(child: Text(state.message)),
             );
           }
+          if (state is ReviewSessionCompleted) {
+            return const AppScaffold(body: SizedBox.shrink());
+          }
 
           final active = state as ReviewSessionActive;
           final chunk = active.currentChunk;
           return AppScaffold(
-            appBar: AppBar(title: const Text('Review Session')),
+            appBar: AppBar(
+              title: Text(widget.isExtraMode ? 'Review Session · Extra' : 'Review Session'),
+            ),
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -98,9 +118,7 @@ class ReviewSessionPage extends StatelessWidget {
                 PrimaryButton(
                   text: 'Done Reciting',
                   isLoading: active.isSubmitting,
-                  onPressed: active.isSubmitting
-                      ? null
-                      : () => _showRatingSheet(context, active),
+                  onPressed: active.isSubmitting ? null : () => _showRatingSheet(context, active),
                 ),
               ],
             ),
@@ -125,8 +143,7 @@ class ReviewSessionPage extends StatelessWidget {
     );
   }
 
-  Future<void> _showRatingSheet(
-      BuildContext context, ReviewSessionActive active) async {
+  Future<void> _showRatingSheet(BuildContext context, ReviewSessionActive active) async {
     final chunk = active.currentChunk;
     int chunkRating = 4;
     final overrides = <int, int>{};
@@ -190,17 +207,78 @@ class ReviewSessionPage extends StatelessWidget {
                   PrimaryButton(
                     text: 'Submit',
                     onPressed: () {
-                      Navigator.of(sheetContext).pop();
                       context.read<ReviewSessionCubit>().submitChunk(
                             chunkRating: chunkRating,
                             perAyahOverrides: overrides,
                           );
+                      Navigator.of(sheetContext).pop();
                     },
                   ),
                 ],
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  Future<void> _showCompletionConfirmation(BuildContext context, String dayKey) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Center(
+                child: Icon(Icons.check_circle, size: 56, color: AppColors.successLight),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Completed',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'You finished today\'s queue.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              PrimaryButton(
+                text: 'Back to Today',
+                onPressed: () async {
+                  await context.read<SessionSnapshotRepository>().clearSnapshot(dayKey);
+                  if (!mounted) {
+                    return;
+                  }
+                  Navigator.of(sheetContext).pop();
+                  Navigator.of(this.context).pop(true);
+                },
+              ),
+              if (widget.hasOptionalOverflow && !widget.isExtraMode) ...[
+                const SizedBox(height: AppSpacing.sm),
+                SecondaryButton(
+                  text: 'Keep going (optional)',
+                  onPressed: () async {
+                    await context.read<SessionSnapshotRepository>().clearSnapshot(dayKey);
+                    if (!mounted) {
+                      return;
+                    }
+                    Navigator.of(sheetContext).pop();
+                    Navigator.of(this.context).pop(ReviewSessionPage.keepGoingOptionalResult);
+                  },
+                ),
+              ],
+            ],
+          ),
         );
       },
     );

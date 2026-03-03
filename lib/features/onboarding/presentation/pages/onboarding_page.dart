@@ -130,7 +130,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               SnackBar(content: Text(state.message)),
             );
           } else if (state is OnboardingSuccess) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.devHome);
+            Navigator.of(context).pushReplacementNamed(AppRoutes.today);
           }
         },
         builder: (context, state) {
