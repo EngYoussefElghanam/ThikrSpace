@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:thikrspace_beta/features/access_gate/presentation/pages/dev_home_page.dart';
 
 import '../../features/access_gate/presentation/cubit/access_gate_cubit.dart';
 import '../../features/auth/data/datasources/firebase_auth_datasource.dart';
@@ -101,7 +102,8 @@ class AppShell extends StatelessWidget {
               routes: {
                 AppRoutes.boot: (_) => const BootPage(),
                 AppRoutes.authGate: (_) => const AuthGate(),
-                AppRoutes.devHome: (_) => const TodayPage(),
+                AppRoutes.devHome: (_) => const DevHomePage(),
+                AppRoutes.today: (_) => const TodayPage(),
                 AppRoutes.onBoarding: (_) => const OnboardingPage(),
                 AppRoutes.signUp: (_) => const SignUpPage(),
               },

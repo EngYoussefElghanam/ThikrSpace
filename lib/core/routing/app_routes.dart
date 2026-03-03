@@ -4,4 +4,5 @@ class AppRoutes {
   static const String authGate = '/auth_gate';
   static const String onBoarding = '/onboarding';
   static const String signUp = '/signup';
+  static const String today = '/today';
 }
